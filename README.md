@@ -27,9 +27,9 @@ Nothing is made by hand. The workflow in
 [`.github/workflows/convert.yml`](.github/workflows/convert.yml) runs on GitHub's
 computers, where its log can be read:
 
-1. It downloads NVIDIA's original model file from NVIDIA's own account on
-   huggingface.co, at a fixed version, and stops unless its SHA-256 is exactly
-   the one NVIDIA published.
+1. It downloads NVIDIA's original model file from NVIDIA's own model page
+   (linked under Credits), at a fixed version, and stops unless its SHA-256 is
+   exactly the one NVIDIA published.
 2. [`convert.py`](convert.py) exports it to ONNX with NVIDIA's own NeMo toolkit
    and reduces the weights to 8 bits with onnxruntime. The export steps follow
    the method documented by the [onnx-asr](https://github.com/istupakov/onnx-asr)
@@ -61,9 +61,7 @@ Websites linked here are third-party websites that we do not run or control.
 
 - **Not made, reviewed or endorsed by NVIDIA or the Silero Team.** This is an
   independent conversion. NVIDIA and Parakeet are trademarks of NVIDIA
-  Corporation, and Hugging Face (the website where NVIDIA publishes the
-  originals) is a trademark of its owner; they are named only to say where the
-  originals come from.
+  Corporation, named only to say where the originals come from.
 - **No warranty.** The files are provided "as is", without warranty of any
   kind, express or implied, including fitness for a particular purpose,
   accuracy, and non-infringement. The original makers give no warranty either.
