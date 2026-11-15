@@ -1,0 +1,101 @@
+# Converts NVIDIA's original Parakeet model to the ONNX files leetsay uses,
+# in the open, and puts the result in a DRAFT release (visible only to the
+# repository owner until it is checked and published by hand).
+#
+# Run it from the Actions tab: "Convert a model" > Run workflow > pick a model.
+name: Convert a model
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "Which model"
+        required: true
+        type: choice
+        options: [parakeet-tdt-0.6b-v2, parakeet-tdt-0.6b-v3, silero-vad]
+
+permissions:
+  contents: write          # to create the draft release
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+
+      # Each source is fixed: NVIDIA's repository at one commit, and the SHA-256
+      # NVIDIA published for that .nemo file. Anything else stops the run.
+      - name: Choose the source
+        id: source
+        run: |
+          case "${{ inputs.model }}" in
+            parakeet-tdt-0.6b-v2)
+              echo "repo=nvidia/parakeet-tdt-0.6b-v2" >> "$GITHUB_OUTPUT"
+              echo "commit=ae9ad07059c7c739ffaf932226a8fe64ae2620b0" >> "$GITHUB_OUTPUT"
+              echo "sha=d99e39955c9d3d0350d8fb7c75e40c64a2b2eaeb003883d7c941fd2e8747b28c" >> "$GITHUB_OUTPUT"
+              echo "tag=parakeet-tdt-0.6b-v2-int8-r1" >> "$GITHUB_OUTPUT" ;;
+            parakeet-tdt-0.6b-v3)
+              echo "repo=nvidia/parakeet-tdt-0.6b-v3" >> "$GITHUB_OUTPUT"
+              echo "commit=541d1f99c6b0c3cd0b11a95167540bb8edefd82b" >> "$GITHUB_OUTPUT"
+              echo "sha=3cbdc85877e668ca7b82d0d56770eb1fac76691f55d6b97545e8d61ca588d10d" >> "$GITHUB_OUTPUT"
+              echo "tag=parakeet-tdt-0.6b-v3-int8-r1" >> "$GITHUB_OUTPUT" ;;
+            silero-vad)
+              echo "tag=silero-vad-v6.2.3" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - name: Make room on the disk
+        if: inputs.model != 'silero-vad'
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      - uses: actions/setup-python@v5
+        if: inputs.model != 'silero-vad'
+        with:
+          python-version: "3.12"
+
+      - name: Install NVIDIA NeMo (CPU only) and onnxruntime
+        if: inputs.model != 'silero-vad'
+        run: |
+          python -m pip install --disable-pip-version-check torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install --disable-pip-version-check "nemo_toolkit[asr]" onnx onnxruntime huggingface_hub
+          python -m pip freeze > build-environment.txt
+
+      - name: Convert
+        if: inputs.model != 'silero-vad'
+        run: |
+          python convert.py "${{ steps.source.outputs.repo }}" "${{ steps.source.outputs.commit }}" \
+            "${{ steps.source.outputs.sha }}" out
+          cp build-environment.txt out/
+          rm -rf out/_work
+
+      # The helper is not converted: it is the makers' own file, taken from
+      # their official release v6.2.3 and checked against its known SHA-256.
+      - name: Fetch the helper (Silero VAD v6.2.3, MIT)
+        if: inputs.model == 'silero-vad'
+        run: |
+          mkdir out
+          curl -sSfL -o out/silero_vad.onnx \
+            https://raw.githubusercontent.com/snakers4/silero-vad/v6.2.3/src/silero_vad/data/silero_vad.onnx
+          echo "1a153a22f4509e292a94e67d6f9b85e8deb25b4988682b7e174c65279d8788e3  out/silero_vad.onnx" | sha256sum -c -
+          printf '{\n    "model_type": "silero"\n}\n' > out/config.json
+          (cd out && sha256sum silero_vad.onnx config.json > SHA256SUMS.txt)
+          printf '%s\n' "Unchanged file from https://github.com/snakers4/silero-vad (tag v6.2.3," \
+            "src/silero_vad/data/silero_vad.onnx), MIT licence, Copyright (c) 2020-present Silero Team." \
+            "config.json is added so onnx-asr knows the model type." > out/PROVENANCE.txt
+          cp LICENSE-silero-vad.txt out/
+
+      - name: Add the licence and the notice
+        if: inputs.model != 'silero-vad'
+        run: cp LICENSE out/LICENSE-CC-BY-4.0.txt && cp NOTICE.md out/
+
+      - name: Fingerprints
+        run: cat out/SHA256SUMS.txt && ls -l out
+
+      - name: Draft release (only the owner can see it until published)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.source.outputs.tag }}" out/* --draft \
+            --title "${{ steps.source.outputs.tag }}" --notes-file out/PROVENANCE.txt
