@@ -71,9 +71,12 @@ Websites linked here are third-party websites that we do not run or control.
 - **The text comes from the model, not from us.** Speech recognition can
   mishear, leave out or add words, including words that were never said. The
   author does not control, and is not responsible for, the text the model
-  produces. Do not rely on it where a wrong, missing or misplaced word could
-  cause harm or loss, such as medical, legal, financial, safety or emergency
-  use.
+  produces. How well it works depends on the speaker's voice, accent and
+  language, the microphone and background noise; NVIDIA's model cards
+  describe the models' known limits. Do not rely on it where a wrong, missing
+  or misplaced word could cause harm or loss, such as medical, legal,
+  financial, safety or emergency use. It is not a medical or certified
+  assistive device.
 - **The conversion may differ from the original.** Exporting and reducing to
   8 bits can change results slightly. No promise is made that these files
   behave exactly like NVIDIA's originals.
@@ -82,9 +85,15 @@ Websites linked here are third-party websites that we do not run or control.
 - **Your responsibility.** You are responsible for how you use these files,
   including any laws about recording or processing speech where you are, and
   for following the licences above if you share them further.
+- **Official files only.** Only releases published in this repository are
+  official. Copies offered anywhere else may have been changed; leetsay checks
+  every file's SHA-256 and refuses any that do not match.
 - **No obligation.** There is no promise of support, fixes, updates, or that
   these files stay available. Releases may be withdrawn at any time, for
   example if a problem is found; leetsay will then refuse them.
+- **Limits of this disclaimer.** Nothing here limits any liability that
+  cannot be limited by law. If any part cannot be enforced, the rest still
+  applies.
 
 ## Problems
 
