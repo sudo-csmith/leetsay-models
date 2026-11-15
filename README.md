@@ -31,7 +31,9 @@ computers, where its log can be read:
    huggingface.co, at a fixed version, and stops unless its SHA-256 is exactly
    the one NVIDIA published.
 2. [`convert.py`](convert.py) exports it to ONNX with NVIDIA's own NeMo toolkit
-   and reduces the weights to 8 bits with onnxruntime.
+   and reduces the weights to 8 bits with onnxruntime. The export steps follow
+   the method documented by the [onnx-asr](https://github.com/istupakov/onnx-asr)
+   project (MIT), the library leetsay uses to run these files.
 3. The result goes into a draft release. It is published only after it has
    been checked against the earlier files (same text from the same
    recordings).
