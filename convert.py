@@ -72,10 +72,15 @@ def main():
         # Not the file NVIDIA published at that commit: stop, publish nothing.
         sys.exit("The original's SHA-256 is not the one NVIDIA published: %s" % source_sha)
 
+    report("original downloaded")
+
     # 2. Export with NVIDIA's own toolkit.
     import nemo.collections.asr as nemo_asr
     model = nemo_asr.models.ASRModel.restore_from(source, map_location="cpu")
     model.eval()
+    # Loaded, and its SHA-256 is recorded: the file itself is no longer needed.
+    os.remove(os.path.realpath(source))
+    report("original loaded and removed")
     model.export(os.path.join(work, "model.onnx"))
     print("Exported:", sorted(f for f in os.listdir(work) if f.endswith(".onnx")), flush=True)
     report("exported")
@@ -94,9 +99,6 @@ def main():
         f.write("\n")
     del model, nemo_asr
     gc.collect()
-    # The original is no longer needed (its SHA-256 is recorded): free its space.
-    os.remove(os.path.realpath(source))
-    report("original removed")
 
     # 4. 8-bit weights (onnxruntime's standard dynamic quantization).
     for part in ("decoder_joint-model", "encoder-model"):
