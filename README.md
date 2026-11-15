@@ -57,9 +57,10 @@ Websites linked here are third-party websites that we do not run or control.
 
 ## Disclaimer
 
-- **Not made, reviewed or endorsed by NVIDIA, Hugging Face or the Silero
-  Team.** This is an independent conversion. NVIDIA, Parakeet and Hugging Face
-  are trademarks of their respective owners, named only to say where the
+- **Not made, reviewed or endorsed by NVIDIA or the Silero Team.** This is an
+  independent conversion. NVIDIA and Parakeet are trademarks of NVIDIA
+  Corporation, and Hugging Face (the website where NVIDIA publishes the
+  originals) is a trademark of its owner; they are named only to say where the
   originals come from.
 - **No warranty.** The files are provided "as is", without warranty of any
   kind, express or implied, including fitness for a particular purpose,
