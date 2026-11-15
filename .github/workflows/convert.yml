@@ -4,6 +4,7 @@
 #
 # Run it from the Actions tab: "Convert a model" > Run workflow > pick a model.
 name: Convert a model
+run-name: "Convert ${{ inputs.model }}"
 
 on:
   workflow_dispatch:
