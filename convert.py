@@ -16,7 +16,10 @@ Usage: python convert.py <nvidia/repo> <commit> <SHA-256 of the .nemo> <output f
 import hashlib
 import json
 import os
+import gc
 import platform
+import shutil
+import subprocess
 import sys
 from importlib import metadata
 
@@ -29,6 +32,25 @@ def sha256(path):
     return digest.hexdigest()
 
 
+def report(step):
+    """Free disk space, so a failed run shows whether the disk was the cause."""
+    for place in sorted({os.path.abspath(os.environ.get("CONVERT_WORK", ".")), "/"}):
+        try:
+            print("[%s] free on %s: %.1f GB" % (step, place, shutil.disk_usage(place).free / 1e9),
+                  flush=True)
+        except OSError:
+            pass
+
+
+# Run in a fresh process for each part, so the memory the export used is
+# fully given back before the large model is loaded again for shrinking.
+_QUANTIZE = """
+import sys
+from onnxruntime.quantization import QuantType, quantize_dynamic
+quantize_dynamic(sys.argv[1], sys.argv[2], weight_type=QuantType.QUInt8)
+"""
+
+
 def main():
     repo, commit, expected, out = sys.argv[1], sys.argv[2], sys.argv[3].lower(), sys.argv[4]
     if not repo.startswith("nvidia/"):
@@ -36,7 +58,8 @@ def main():
     if len(commit) != 40:
         sys.exit("Give the full 40-character commit, so the source is fixed.")
     os.makedirs(out, exist_ok=True)
-    work = os.path.join(out, "_work")
+    # The large working files go on the bigger disk when the workflow gives one.
+    work = os.environ.get("CONVERT_WORK") or os.path.join(out, "_work")
     os.makedirs(work, exist_ok=True)
 
     # 1. NVIDIA's original, at exactly this commit.
@@ -54,7 +77,8 @@ def main():
     model = nemo_asr.models.ASRModel.restore_from(source, map_location="cpu")
     model.eval()
     model.export(os.path.join(work, "model.onnx"))
-    print("Exported:", sorted(os.listdir(work)), flush=True)
+    print("Exported:", sorted(f for f in os.listdir(work) if f.endswith(".onnx")), flush=True)
+    report("exported")
 
     # 3. The word pieces and the settings onnx-asr reads.
     with open(os.path.join(out, "vocab.txt"), "w", encoding="utf-8", newline="\n") as f:
@@ -68,15 +92,18 @@ def main():
     with open(os.path.join(out, "config.json"), "w", encoding="utf-8", newline="\n") as f:
         json.dump(config, f, indent=4)
         f.write("\n")
-    del model
+    del model, nemo_asr
+    gc.collect()
+    # The original is no longer needed (its SHA-256 is recorded): free its space.
+    os.remove(os.path.realpath(source))
+    report("original removed")
 
     # 4. 8-bit weights (onnxruntime's standard dynamic quantization).
-    from onnxruntime.quantization import QuantType, quantize_dynamic
-    for part in ("encoder-model", "decoder_joint-model"):
-        quantize_dynamic(os.path.join(work, part + ".onnx"),
-                         os.path.join(out, part + ".int8.onnx"),
-                         weight_type=QuantType.QUInt8)
+    for part in ("decoder_joint-model", "encoder-model"):
+        subprocess.run([sys.executable, "-c", _QUANTIZE, os.path.join(work, part + ".onnx"),
+                        os.path.join(out, part + ".int8.onnx")], check=True)
         print("Quantized:", part, flush=True)
+        report("quantized " + part)
 
     # 5. Fingerprints and the record of how it was made.
     published = ["config.json", "vocab.txt", "encoder-model.int8.onnx",
