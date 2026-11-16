@@ -23,4 +23,4 @@ NVIDIA.
   NVIDIA Corporation, named here only to say where the model comes from.
 - **No warranty:** as the licence says, the model is provided "as is", without
   warranties of any kind, by NVIDIA and by the leetsay project. See the
-  disclaimer in README.md.
+  disclaimer at https://github.com/sudo-csmith/leetsay-models#disclaimer.

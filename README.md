@@ -53,7 +53,8 @@ own file from their official release, checked against its known SHA-256.
   ([LICENSE-silero-vad.txt](LICENSE-silero-vad.txt)). Original:
   [snakers4/silero-vad](https://github.com/snakers4/silero-vad).
 - The conversion scripts in this repository (`convert.py`, the workflow) are
-  under the MIT licence, like leetsay.
+  under the MIT licence, like leetsay
+  ([LICENSE-scripts.txt](LICENSE-scripts.txt)).
 
 Websites linked here are third-party websites that we do not run or control.
 
