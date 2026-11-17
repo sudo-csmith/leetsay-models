@@ -1,7 +1,7 @@
 # leetsay-models
 
 The speech recognition files used by
-[leetsay](https://github.com/sudo-csmith/leetsay), a free, local dictation app
+[leetsay](https://github.com/sudo-csmith/leetsay), a local dictation app
 for Windows. They are converted, in the open, from NVIDIA's original models.
 
 leetsay downloads them only after you agree, and checks every file against a
